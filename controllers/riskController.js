@@ -1,31 +1,37 @@
-const fs = require("fs")
+const RiskAlert = require("../models/RiskAlert")
 
+const fs = require("fs")
 const extractFeatures = require("../services/featureExtractor")
 const calculateRisk = require("../services/riskEngine")
 
-const RISK_FILE = "./data/risk.json"
 const AI_PREDICTION_FILE = "./data/aiPredictions.json"
 
 /* SAVE RISK */
-function saveRisk(req, res) {
+async function saveRisk(req, res) {
 
-    const { message } = req.body
+    try {
 
-    let risks = JSON.parse(
-        fs.readFileSync(RISK_FILE, "utf8") || "[]"
-    )
+        const { message } = req.body
 
-    risks.push({
-        message,
-        time: new Date().toLocaleString()
-    })
+        await RiskAlert.create({
 
-    fs.writeFileSync(
-        RISK_FILE,
-        JSON.stringify(risks, null, 2)
-    )
+            message,
+            time: new Date().toLocaleString()
 
-    res.send("risk saved")
+        })
+
+        res.send("risk saved")
+
+    }
+
+    catch(err){
+
+        console.error(err)
+
+        res.status(500).send("error")
+
+    }
+
 }
 
 /* CALCULATE AI RISK */
@@ -48,36 +54,54 @@ async function calculateAIRisk(req, res) {
         }
 
         history.push({
+
             time: new Date().toLocaleString(),
+
             features,
+
             prediction: result
+
         })
 
         fs.writeFileSync(
+
             AI_PREDICTION_FILE,
+
             JSON.stringify(history, null, 2)
+
         )
 
         res.json({
+
             success: true,
+
             features,
+
             risk: result
+
         })
 
-    } catch (err) {
+    }
+
+    catch(err){
 
         console.error(err)
 
         res.status(500).json({
-            success: false,
-            message: err.message
+
+            success:false,
+
+            message:err.message
+
         })
 
     }
 
 }
 
-module.exports = {
-    saveRisk,
-    calculateAIRisk
+module.exports={
+
+saveRisk,
+calculateAIRisk
+
 }

@@ -1,86 +1,81 @@
-const fs = require("fs")
-
-const TRAVEL_FILE = "./data/travel.json"
+const Trip = require("../models/Trip")
 
 function getTimeData(event, lat, lon) {
 
-const now = new Date()
+    const now = new Date()
 
-return {
-
-event: event,
-date: now.toLocaleDateString(),
-day: now.toLocaleString("en-US", { weekday: "long" }),
-time: now.toLocaleTimeString(),
-lat: lat,
-lon: lon
-
-}
+    return {
+        event,
+        date: now.toLocaleDateString(),
+        day: now.toLocaleString("en-US", { weekday: "long" }),
+        time: now.toLocaleTimeString(),
+        lat,
+        lon
+    }
 
 }
 
-/* TRAVEL START */
-function startTravel(req, res) {
+async function startTravel(req, res) {
 
-const { lat, lon } = req.body
+    console.log("TRAVEL CONTROLLER CALLED")
 
-let travel = JSON.parse(
-fs.readFileSync(TRAVEL_FILE, "utf8") || "[]"
-)
+    const { lat, lon } = req.body
 
-travel.push(getTimeData("TRAVEL_START", lat, lon))
+    await Trip.create(
+        getTimeData("TRAVEL_START", lat, lon)
+    )
 
-fs.writeFileSync(
-TRAVEL_FILE,
-JSON.stringify(travel, null, 2)
-)
+    console.log("TRIP SAVED")
 
-res.send("travel stored")
-
+    res.send("travel stored")
 }
 
 /* SHARE LOCATION */
-function shareLocation(req, res) {
+async function shareLocation(req, res) {
 
-const { lat, lon } = req.body
+    try {
 
-let travel = JSON.parse(
-fs.readFileSync(TRAVEL_FILE, "utf8") || "[]"
-)
+        const { lat, lon } = req.body
 
-travel.push(getTimeData("GPS_SHARED", lat, lon))
+        await Trip.create(
+            getTimeData("GPS_SHARED", lat, lon)
+        )
 
-fs.writeFileSync(
-TRAVEL_FILE,
-JSON.stringify(travel, null, 2)
-)
+        res.send("gps stored")
 
-res.send("gps stored")
+    } catch (err) {
+
+        console.error(err)
+        res.status(500).send("error")
+
+    }
 
 }
 
 /* SOS */
-function sendSOS(req, res) {
+async function sendSOS(req, res) {
 
-const { lat, lon } = req.body
+    try {
 
-let travel = JSON.parse(
-fs.readFileSync(TRAVEL_FILE, "utf8") || "[]"
-)
+        const { lat, lon } = req.body
 
-travel.push(getTimeData("SOS_ALERT", lat, lon))
+        await Trip.create(
+            getTimeData("SOS_ALERT", lat, lon)
+        )
 
-fs.writeFileSync(
-TRAVEL_FILE,
-JSON.stringify(travel, null, 2)
-)
+        res.send("sos stored")
 
-res.send("sos stored")
+    } catch (err) {
+
+        console.error(err)
+        res.status(500).send("error")
+
+    }
 
 }
 
 module.exports = {
-startTravel,
-shareLocation,
-sendSOS
+    startTravel,
+    shareLocation,
+    sendSOS
 }

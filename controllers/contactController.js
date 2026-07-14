@@ -1,45 +1,50 @@
-const fs = require("fs")
-
-const CONTACT_FILE = "./data/contacts.json"
+const Contact = require("../models/Contact")
 
 /* SAVE CONTACT */
-function saveContact(req, res) {
+async function saveContact(req, res) {
 
-const { number } = req.body
+    try {
 
-let contacts = JSON.parse(
-fs.readFileSync(CONTACT_FILE, "utf8") || "[]"
-)
+        const { number } = req.body
 
-const exists = contacts.some(c => c.number === number)
+        const exists = await Contact.findOne({ number })
 
-if (exists) {
-return res.send("exists")
-}
+        if (exists) {
+            return res.send("exists")
+        }
 
-contacts.push({ number })
+        await Contact.create({ number })
 
-fs.writeFileSync(
-CONTACT_FILE,
-JSON.stringify(contacts, null, 2)
-)
+        res.send("saved")
 
-res.send("saved")
+    } catch (err) {
+
+        console.error(err)
+        res.status(500).send("error")
+
+    }
 
 }
 
 /* GET CONTACTS */
-function getContacts(req, res) {
+async function getContacts(req, res) {
 
-let contacts = JSON.parse(
-fs.readFileSync(CONTACT_FILE, "utf8") || "[]"
-)
+    try {
 
-res.json(contacts)
+        const contacts = await Contact.find()
+
+        res.json(contacts)
+
+    } catch (err) {
+
+        console.error(err)
+        res.status(500).send("error")
+
+    }
 
 }
 
 module.exports = {
-saveContact,
-getContacts
+    saveContact,
+    getContacts
 }
