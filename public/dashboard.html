@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Women Safety</title>
+<link rel="stylesheet" href="style.css">
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+/>
+
+</head>
+
+<body>
+
+
+<div id="popup" class="popup">
+
+<h2>Are you travelling in public transport?</h2>
+
+<button onclick="startTravel()">YES</button>
+<button onclick="closePopup()">NO</button>
+
+</div>
+
+
+<div id="loginPopup" class="popup hidden">
+
+<h2>Login</h2>
+
+<input id="loginEmail" placeholder="Email"><br>
+<input id="loginPassword" type="password" placeholder="Password"><br>
+
+<button onclick="login()">Login</button>
+<button onclick="closeLogin()">Close</button>
+
+</div>
+
+
+<div id="signupPopup" class="popup hidden">
+
+<h2>Signup</h2>
+
+<input id="signupEmail" placeholder="Email"><br>
+<input id="signupPassword" type="password" placeholder="Password"><br>
+
+<button onclick="signup()">Signup</button>
+<button onclick="closeSignup()">Close</button>
+
+</div>
+
+
+
+<nav>
+
+<h2>smart Safety</h2>
+
+<ul>
+
+<li class="dropdown">
+
+Contacts ▼
+
+<div class="dropdown-content">
+
+<button onclick="addContact()">Add Contact</button>
+
+<div id="contactList"></div>
+
+</div>
+
+</li>
+
+<li onclick="openLogin()">Login</li>
+<li onclick="openSignup()">Signup</li>
+
+</ul>
+
+</nav>
+<div class="container">
+
+<h1>Smart Transport Safety System</h1>
+
+<div class="dashboard-cards">
+
+<div class="card">
+<h3>Contacts</h3>
+<p>5</p>
+</div>
+
+<div class="card">
+<h3>Risk Level</h3>
+<p>Low</p>
+</div>
+
+<div class="card">
+<h3>Tracking</h3>
+<p>ON</p>
+</div>
+
+<div class="card">
+<h3>SOS Alerts</h3>
+<p>0</p>
+</div>
+
+</div>
+
+<button onclick="shareLocation()">Share GPS Location</button>
+
+<button onclick="sendSOS()">SOS ALERT</button>
+<div id="map"></div>
+<div class="riskBox">
+
+<h3>Risk Detection</h3>
+
+<div id="riskPercent">0%</div>
+
+<textarea id="riskMessage" placeholder="Write your situation message..."></textarea>
+
+<button onclick="saveRiskMessage()">Submit Message</button>
+
+</div>
+
+</div>
+<!-- SAFETY CHECK POPUP -->
+
+<!-- SAFETY CHECK POPUP -->
+<div id="safetyBox" class="popup ">
+
+<h2>Vehicle seems stopped</h2>
+<p>Are you safe?</p>
+
+<button onclick="staySafe()">YES, I AM SAFE</button>
+
+<button onclick="sendAlert()">NO, SEND ALERT</button>
+
+</div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script src="dashboard.js"></script>
+
+</body>
+
+</html>
