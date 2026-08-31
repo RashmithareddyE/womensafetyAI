@@ -1,65 +1,78 @@
+/* Shared auth helpers, used by index.html, signup.html, and dashboard.html */
+
+function getAuthToken() {
+    return localStorage.getItem("authToken")
+}
+
+function authHeaders() {
+    return {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + getAuthToken()
+    }
+}
+
 function signup() {
 
-const email = document.getElementById("signupEmail").value
-const password = document.getElementById("signupPassword").value
+    const email = document.getElementById("signupEmail").value
+    const password = document.getElementById("signupPassword").value
 
-fetch("/signup", {
-method: "POST",
-headers: {
-"Content-Type": "application/json"
-},
-body: JSON.stringify({ email, password })
-})
-.then(res => res.text())
-.then(data => {
+    fetch("/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+        .then(res => res.json())
+        .then(data => {
 
-if(data === "signup success"){
+            if (data.message === "signup success") {
 
-localStorage.setItem("userEmail", email)
+                localStorage.setItem("authToken", data.token)
+                localStorage.setItem("userEmail", data.email)
 
-window.location.href = "dashboard.html"
+                window.location.href = "dashboard.html"
 
-}
+            }
 
-else{
+            else if (data.message === "exists") {
+                alert("User already exists")
+            }
 
-alert("User already exists")
+            else {
+                alert(data.message || "Signup failed")
+            }
 
-}
-
-})
+        })
+        .catch(() => alert("Signup failed. Please try again."))
 
 }
 
 function login() {
 
-const email = document.getElementById("loginEmail").value
-const password = document.getElementById("loginPassword").value
+    const email = document.getElementById("loginEmail").value
+    const password = document.getElementById("loginPassword").value
 
-fetch("/login", {
-method: "POST",
-headers: {
-"Content-Type": "application/json"
-},
-body: JSON.stringify({ email, password })
-})
-.then(res => res.text())
-.then(data => {
+    fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+    })
+        .then(res => res.json())
+        .then(data => {
 
-if(data === "login success"){
+            if (data.message === "login success") {
 
-localStorage.setItem("userEmail", email)
+                localStorage.setItem("authToken", data.token)
+                localStorage.setItem("userEmail", data.email)
 
-window.location.href = "dashboard.html"
+                window.location.href = "dashboard.html"
 
-}
+            }
 
-else{
+            else {
+                alert("Invalid login")
+            }
 
-alert("Invalid login")
-
-}
-
-})
+        })
+        .catch(() => alert("Login failed. Please try again."))
 
 }

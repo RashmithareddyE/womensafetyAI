@@ -1,16 +1,13 @@
+require("dotenv").config()
+
 const express = require("express")
-const fs = require("fs")
 
 const connectDB = require("./config/db")
-const extractFeatures = require("./services/featureExtractor")
-const calculateRisk = require("./services/riskEngine")
 
 const authRoutes = require("./routes/authRoutes")
 const contactRoutes = require("./routes/contactRoutes")
 const travelRoutes = require("./routes/travelRoutes")
 const riskRoutes = require("./routes/riskRoutes")
-
-const AI_PREDICTION_FILE = "./data/aiPredictions.json"
 
 const app = express()
 
@@ -24,10 +21,21 @@ app.use("/", contactRoutes)
 app.use("/", travelRoutes)
 app.use("/", riskRoutes)
 
+/* 404 handler for unknown API routes */
+app.use((req, res) => {
+    res.status(404).json({ message: "Not found" })
+})
 
+/* Generic error handler so unexpected errors don't crash the process */
+app.use((err, req, res, next) => {
+    console.error(err)
+    res.status(500).json({ message: "Something went wrong" })
+})
 
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3000
 
-    console.log("Server running at http://localhost:3000")
+app.listen(PORT, () => {
+
+    console.log(`Server running at http://localhost:${PORT}`)
 
 })

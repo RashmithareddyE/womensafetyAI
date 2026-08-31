@@ -4,6 +4,13 @@ let stopTimer = null
 let autoSOS = null
 
 window.onload = function () {
+
+  /* This is a protected page — bounce back to login if there's no token */
+  if (!getAuthToken()) {
+    window.location.href = "index.html"
+    return
+  }
+
   document.getElementById("popup").style.display = "block"
   loadContacts()
 }
@@ -13,294 +20,302 @@ function closePopup() {
 }
 
 function getLocation(callback) {
-  navigator.geolocation.getCurrentPosition((pos) => {
-    callback(pos.coords.latitude, pos.coords.longitude)
-  })
+
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by this browser.")
+        return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+        function (position) {
+
+            const lat = position.coords.latitude
+            const lon = position.coords.longitude
+
+            callback(lat, lon)
+
+        },
+
+        function (error) {
+
+            switch (error.code) {
+
+                case error.PERMISSION_DENIED:
+                    alert("Location permission denied")
+                    break
+
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location unavailable")
+                    break
+
+                case error.TIMEOUT:
+                    alert("Location request timed out")
+                    break
+
+                default:
+                    alert("Unknown location error")
+            }
+
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
+        }
+
+    )
+
 }
 
 /* START TRAVEL + START TRACKING */
 function startTravel() {
 
-closePopup()
+    closePopup()
 
-navigator.geolocation.getCurrentPosition((pos) => {
+    getLocation((lat, lon) => {
 
-const lat = pos.coords.latitude
-const lon = pos.coords.longitude
+        fetch("/travel-start", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ lat, lon })
+        })
+        .then(res => res.text())
+        .then(() => {
+            alert("Travel started and location stored")
+        })
 
-fetch("/travel-start", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ lat, lon })
-})
-.then(res => res.text())
-.then(data => {
-alert("Travel started and location stored")
-})
+    })
 
-})
+    setTimeout(function () {
 
-setTimeout(function () {
+        document.getElementById("safetyBox").style.display = "block"
 
-document.getElementById("safetyBox").style.display = "block"
+        /* AUTO SOS AFTER 5 SECONDS IF NO RESPONSE */
+        autoSOS = setTimeout(function () {
+            sendSOS()
+        }, 5000)
 
-/* AUTO SOS AFTER 5 SECONDS IF NO RESPONSE */
-autoSOS = setTimeout(function () {
-sendSOS()
-}, 5000)
-
-}, 20000)
+    }, 20000)
 
 }
 
 /* AFTER 10 SECONDS SHOW SAFETY CHECK */
 setTimeout(function () {
 
-document.getElementById("safetyBox").style.display = "block"
+    document.getElementById("safetyBox").style.display = "block"
 
 }, 10000)
 
 /* SHARE GPS BUTTON */
 function shareLocation() {
 
-navigator.geolocation.getCurrentPosition((pos) => {
+    getLocation((lat, lon) => {
 
-const lat = pos.coords.latitude
-const lon = pos.coords.longitude
+        fetch("/share-location", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ lat, lon })
+        })
+        .then(res => res.text())
+        .then(() => {
+            alert("Location shared successfully")
+        })
 
-fetch("/share-location", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ lat, lon })
-})
-.then(res => res.text())
-.then(data => {
-alert("Location sent successfully")
-})
-
-})
+    })
 
 }
 
 /* SOS */
 function sendSOS() {
 
-getLocation((lat, lon) => {
+    getLocation((lat, lon) => {
 
-fetch("/sos", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ lat, lon })
-})
+        fetch("/sos", {
+            method: "POST",
+            headers: authHeaders(),
+            body: JSON.stringify({ lat, lon })
+        })
+        .then(res => res.text())
+        .then(() => {
+            alert("SOS sent successfully")
+        })
 
-alert("SOS sent")
-
-})
+    })
 
 }
 
 /* SAFETY POPUP BUTTONS */
 function sendAlert() {
 
-clearTimeout(autoSOS)
+    clearTimeout(autoSOS)
 
-document.getElementById("safetyBox").style.display = "none"
+    document.getElementById("safetyBox").style.display = "none"
 
-sendSOS()
+    sendSOS()
 
 }
 
 /* CONTACTS */
 function addContact() {
 
-const number = prompt("Enter emergency contact number")
+    const number = prompt("Enter emergency contact number")
 
-fetch("/save-contact", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ number })
-})
-.then(res => res.text())
-.then(data => {
+    if (!number) return
 
-if (data === "exists") {
-alert("Contact already present")
-}
+    fetch("/save-contact", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ number })
+    })
+    .then(res => res.text())
+    .then(data => {
 
-else {
-alert("Contact saved successfully")
-loadContacts()
-}
+        if (data === "exists") {
+            alert("Contact already present")
+        }
 
-})
+        else {
+            alert("Contact saved successfully")
+            loadContacts()
+        }
+
+    })
 
 }
 
 function loadContacts() {
 
-fetch("/get-contacts")
-.then(res => res.json())
-.then(data => {
+    fetch("/get-contacts", {
+        headers: authHeaders()
+    })
+    .then(res => res.json())
+    .then(data => {
 
-const list = document.getElementById("contactList")
-list.innerHTML = ""
+        const list = document.getElementById("contactList")
+        list.innerHTML = ""
 
-data.forEach(c => {
-const div = document.createElement("div")
-div.innerText = c.number
-list.appendChild(div)
-})
+        data.forEach(c => {
+            const div = document.createElement("div")
+            div.innerText = c.number
+            list.appendChild(div)
+        })
 
-})
+    })
 
 }
 
-/* LOGIN / SIGNUP */
+/* LOGIN / SIGNUP POPUP TOGGLES (signup()/login() themselves live in login.js) */
 function openLogin() {
-document.getElementById("loginPopup").classList.remove("hidden")
+    document.getElementById("loginPopup").classList.remove("hidden")
 }
 
 function closeLogin() {
-document.getElementById("loginPopup").classList.add("hidden")
+    document.getElementById("loginPopup").classList.add("hidden")
 }
 
 function openSignup() {
-document.getElementById("signupPopup").classList.remove("hidden")
+    document.getElementById("signupPopup").classList.remove("hidden")
 }
 
 function closeSignup() {
-document.getElementById("signupPopup").classList.add("hidden")
+    document.getElementById("signupPopup").classList.add("hidden")
 }
 
-/* SIGNUP */
-function signup() {
+/* AI RISK GENERATION */
+async function generateRisk() {
 
-const email = document.getElementById("signupEmail").value
-const password = document.getElementById("signupPassword").value
+    try {
 
-fetch("/signup", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ email, password })
-})
-.then(res => res.text())
-.then(data => {
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject)
+        })
 
-if (data === "signup success") {
+        const lat = position.coords.latitude
+        const lon = position.coords.longitude
 
-alert("Signup successful")
+        const response = await fetch("/calculate-risk", {
 
-document.getElementById("signupPopup").classList.add("hidden")
+            method: "POST",
 
-}
+            headers: authHeaders(),
 
-else if (data === "exists") {
+            body: JSON.stringify({
+                lat,
+                lon
+            })
 
-alert("User already exists")
+        })
 
-}
+        const data = await response.json()
 
-else {
+        document.getElementById("riskPercent").innerText =
+            data.risk.score + "%"
 
-alert("Signup failed")
+    }
+    catch (err) {
 
-}
+        console.error(err)
 
-})
+        alert("Unable to calculate risk")
 
-}
-
-/* LOGIN */
-function login() {
-
-const email = document.getElementById("loginEmail").value
-const password = document.getElementById("loginPassword").value
-
-fetch("/login", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ email, password })
-})
-.then(res => res.text())
-.then(data => {
-
-if (data === "login success") {
-
-alert("Login successful")
-
-document.getElementById("loginPopup").classList.add("hidden")
-
-}
-
-else {
-
-alert("Invalid login")
-
-}
-
-})
-
-}
-
-/* RISK GENERATION */
-function generateRisk() {
-
-let risk = Math.floor(Math.random() * 60) + 20
-
-document.getElementById("riskPercent").innerText = risk + "%"
+    }
 
 }
 
 /* SAFE BUTTON */
 function staySafe() {
 
-clearTimeout(autoSOS)
+    clearTimeout(autoSOS)
 
-document.getElementById("safetyBox").style.display = "none"
+    document.getElementById("safetyBox").style.display = "none"
 
-generateRisk()
+    generateRisk()
 
 }
 
 /* SAVE RISK MESSAGE */
 function saveRiskMessage() {
 
-let msg = document.getElementById("riskMessage").value
+    let msg = document.getElementById("riskMessage").value
 
-if (msg === "") {
-alert("Please enter a message")
-return
+    if (msg === "") {
+        alert("Please enter a message")
+        return
+    }
+
+    fetch("/save-risk", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ message: msg })
+    })
+    .then(res => res.text())
+    .then(data => {
+        alert("Message saved successfully")
+    })
+
+    document.getElementById("riskMessage").value = ""
+
 }
 
-fetch("/save-risk", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ message: msg })
-})
-.then(res => res.text())
-.then(data => {
-alert("Message saved successfully")
-})
-
-document.getElementById("riskMessage").value = ""
-
-}
-let map = L.map('map').setView([12.9716,77.5946], 13)
+/* MAP */
+let map = L.map('map').setView([12.9716, 77.5946], 13)
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-attribution: '© OpenStreetMap contributors'
+    attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map)
 
-navigator.geolocation.getCurrentPosition((pos)=>{
+navigator.geolocation.getCurrentPosition((pos) => {
 
-const lat = pos.coords.latitude
-const lon = pos.coords.longitude
+    const lat = pos.coords.latitude
+    const lon = pos.coords.longitude
 
-map.setView([lat,lon],15)
+    map.setView([lat, lon], 15)
 
-L.marker([lat,lon])
-.addTo(map)
-.bindPopup("You are here")
-.openPopup()
+    L.marker([lat, lon])
+        .addTo(map)
+        .bindPopup("You are here")
+        .openPopup()
 
 })

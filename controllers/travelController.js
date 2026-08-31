@@ -17,17 +17,24 @@ function getTimeData(event, lat, lon) {
 
 async function startTravel(req, res) {
 
-    console.log("TRAVEL CONTROLLER CALLED")
+    try {
 
-    const { lat, lon } = req.body
+        const { lat, lon } = req.body
 
-    await Trip.create(
-        getTimeData("TRAVEL_START", lat, lon)
-    )
+        await Trip.create({
+            ...getTimeData("TRAVEL_START", lat, lon),
+            owner: req.userId
+        })
 
-    console.log("TRIP SAVED")
+        res.send("travel stored")
 
-    res.send("travel stored")
+    } catch (err) {
+
+        console.error(err)
+        res.status(500).send("error")
+
+    }
+
 }
 
 /* SHARE LOCATION */
@@ -37,9 +44,10 @@ async function shareLocation(req, res) {
 
         const { lat, lon } = req.body
 
-        await Trip.create(
-            getTimeData("GPS_SHARED", lat, lon)
-        )
+        await Trip.create({
+            ...getTimeData("GPS_SHARED", lat, lon),
+            owner: req.userId
+        })
 
         res.send("gps stored")
 
@@ -59,9 +67,10 @@ async function sendSOS(req, res) {
 
         const { lat, lon } = req.body
 
-        await Trip.create(
-            getTimeData("SOS_ALERT", lat, lon)
-        )
+        await Trip.create({
+            ...getTimeData("SOS_ALERT", lat, lon),
+            owner: req.userId
+        })
 
         res.send("sos stored")
 

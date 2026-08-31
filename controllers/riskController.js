@@ -1,22 +1,25 @@
 const RiskAlert = require("../models/RiskAlert")
+const RiskPrediction = require("../models/RiskPrediction")
 
-const fs = require("fs")
 const extractFeatures = require("../services/featureExtractor")
 const calculateRisk = require("../services/riskEngine")
 
-const AI_PREDICTION_FILE = "./data/aiPredictions.json"
-
-/* SAVE RISK */
+/* SAVE RISK (free-text situation message) */
 async function saveRisk(req, res) {
 
     try {
 
         const { message } = req.body
 
+        if (!message) {
+            return res.status(400).send("A message is required")
+        }
+
         await RiskAlert.create({
 
             message,
-            time: new Date().toLocaleString()
+            time: new Date().toLocaleString(),
+            owner: req.userId
 
         })
 
@@ -24,7 +27,7 @@ async function saveRisk(req, res) {
 
     }
 
-    catch(err){
+    catch (err) {
 
         console.error(err)
 
@@ -43,33 +46,20 @@ async function calculateAIRisk(req, res) {
 
         const result = calculateRisk(features)
 
-        let history = []
+        /* tripId is optional — a prediction doesn't have to belong to a trip */
+        const { tripId } = req.body
 
-        if (fs.existsSync(AI_PREDICTION_FILE)) {
+        await RiskPrediction.create({
 
-            history = JSON.parse(
-                fs.readFileSync(AI_PREDICTION_FILE, "utf8")
-            )
+            owner: req.userId,
 
-        }
-
-        history.push({
-
-            time: new Date().toLocaleString(),
+            ...(tripId ? { trip: tripId } : {}),
 
             features,
 
             prediction: result
 
         })
-
-        fs.writeFileSync(
-
-            AI_PREDICTION_FILE,
-
-            JSON.stringify(history, null, 2)
-
-        )
 
         res.json({
 
@@ -83,15 +73,15 @@ async function calculateAIRisk(req, res) {
 
     }
 
-    catch(err){
+    catch (err) {
 
         console.error(err)
 
         res.status(500).json({
 
-            success:false,
+            success: false,
 
-            message:err.message
+            message: err.message
 
         })
 
@@ -99,9 +89,34 @@ async function calculateAIRisk(req, res) {
 
 }
 
-module.exports={
+/* GET RISK PREDICTION HISTORY (for the authenticated user) */
+async function getRiskHistory(req, res) {
 
-saveRisk,
-calculateAIRisk
+    try {
+
+        const history = await RiskPrediction
+            .find({ owner: req.userId })
+            .sort({ createdAt: -1 })
+            .limit(100)
+
+        res.json(history)
+
+    }
+
+    catch (err) {
+
+        console.error(err)
+
+        res.status(500).json({ message: "error" })
+
+    }
+
+}
+
+module.exports = {
+
+    saveRisk,
+    calculateAIRisk,
+    getRiskHistory
 
 }

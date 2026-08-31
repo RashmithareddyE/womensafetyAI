@@ -7,13 +7,17 @@ async function saveContact(req, res) {
 
         const { number } = req.body
 
-        const exists = await Contact.findOne({ number })
+        if (!number) {
+            return res.status(400).send("A contact number is required")
+        }
+
+        const exists = await Contact.findOne({ number, owner: req.userId })
 
         if (exists) {
             return res.send("exists")
         }
 
-        await Contact.create({ number })
+        await Contact.create({ number, owner: req.userId })
 
         res.send("saved")
 
@@ -31,7 +35,7 @@ async function getContacts(req, res) {
 
     try {
 
-        const contacts = await Contact.find()
+        const contacts = await Contact.find({ owner: req.userId })
 
         res.json(contacts)
 
