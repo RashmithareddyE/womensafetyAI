@@ -109,6 +109,22 @@ button{
     box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
+.location-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.current-location-dot{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#2563eb;
+    border:3px solid white;
+    box-shadow:0 0 6px rgba(37,99,235,0.8);
+}
+
 #riskPercent{
     font-size:50px;
     font-weight:bold;
@@ -183,4 +199,39 @@ textarea{
     margin:10px 0;
     border:1px solid #ccc;
     border-radius:8px;
+}
+.my-location-control{
+    width:34px;
+    height:34px;
+    background:white;
+    border:none;
+    border-radius:6px;
+    box-shadow:0 1px 5px rgba(0,0,0,0.4);
+    font-size:16px;
+    cursor:pointer;
+}
+
+.my-location-control:hover{
+    background:#f4f6f9;
+}
+
+.map-error{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:20px;
+    color:#64748b;
+    background:#f4f6f9;
+    border-radius:15px;
+}
+
+@media(max-width:768px){
+
+    #map{
+        height:300px;
+    }
+
 }
